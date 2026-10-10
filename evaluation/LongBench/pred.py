@@ -15,7 +15,7 @@ import random
 import argparse
 # ****** Claude Added ******
 import gc
-from evaluation.quest_attention_bench import enable_quest_attention_eval
+from evaluation.quest_attention import enable_quest_attention_eval
 from evaluation.llama import enable_tuple_kv_cache_for_llama 
 from evaluation.mistral import enable_tuple_kv_cache_for_mistral
 from evaluation.qwen import enable_tuple_kv_cache_for_qwen2

@@ -67,7 +67,7 @@ class HuggingFaceModel:
         )
         
         # ****************************************************************************************************************
-        from evaluation.quest_attention_bench import enable_quest_attention_eval
+        from evaluation.quest_attention import enable_quest_attention_eval
 
         enable_quest_attention_eval(self.model, self.args)
         self.pipeline=None

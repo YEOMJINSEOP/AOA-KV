@@ -47,7 +47,7 @@ is never scored (it is always attended to), so it needs no entry.
 ## Same formula on the accuracy side
 
 The accuracy numbers do not use these kernels. They come from the PyTorch
-simulation in `filtering/filter_util_bench.py`
+simulation in `filtering/filter_util.py`
 (`local_heavy_hitter_mask_value_aware_group_consistent_sum`), which computes the
 identical quantity:
 
@@ -65,7 +65,7 @@ simulation, `1e-6` in the kernel — irrelevant at fp16 page norms).
 
 **GQA aggregation.** The simulation is *group-consistent*: it `logsumexp`es the
 scores of all query heads in a KV group before adding `2·log‖V‖`, so every head
-in a group selects the same pages (`filter_util_bench.py:361`). The kernel adds
+in a group selects the same pages (`filter_util.py:361`). The kernel adds
 `v_log_norm` per query head inside `compute_max_possible` and `decode_topk`
 selects per head — there is no cross-head aggregation.
 

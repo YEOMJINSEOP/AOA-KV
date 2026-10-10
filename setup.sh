@@ -96,8 +96,8 @@ from pathlib import Path
 root = Path.cwd().resolve()
 sys.path.insert(0, str(root))
 bad = []
-for m in ["evaluation.quest_attention_bench", "evaluation.llama", "evaluation.mistral",
-          "evaluation.qwen", "filtering.filter_util_bench", "compat.manifest"]:
+for m in ["evaluation.quest_attention", "evaluation.llama", "evaluation.mistral",
+          "evaluation.qwen", "filtering.filter_util", "compat.manifest"]:
     try:
         f = Path(importlib.import_module(m).__file__).resolve()
     except Exception as e:

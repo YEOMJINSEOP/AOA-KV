@@ -27,7 +27,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../../")))
 
-from filtering.filter_util_bench import *  # import local_heavy_hitter_mask variations
+from filtering.filter_util import *  # import local_heavy_hitter_mask variations
 
 import json
 

@@ -14,10 +14,11 @@ become `Quest` / `Quest+VA`). Keep it the same on both arms or the comparison
 means nothing.
 
 Attention is **simulated in PyTorch** here, not run through the CUDA kernels:
-`evaluation/quest_attention_bench.py` replaces each attention module's
-`forward`, and `filtering/filter_util_bench.py` does the page scoring and top-k.
-There is one such path — the `BENCH_MODE` switch and the second (non-`_bench`)
-copy of both modules are gone, so a run cannot silently use the other variant.
+`evaluation/quest_attention.py` replaces each attention module's
+`forward`, and `filtering/filter_util.py` does the page scoring and top-k.
+There is exactly one such path: the research tree carried a second, near-identical
+copy of both modules behind a `BENCH_MODE` switch, and that copy is gone — so a
+run cannot silently score with a different variant.
 Latency therefore cannot be read off these runs — see [LATENCY.md](LATENCY.md).
 
 The scoring formula and its relationship to the kernel implementation is in
@@ -110,11 +111,11 @@ translates the RULER spelling, so pass the same `--model` value to both runners.
 - **GQA group-consistent selection** is part of the simulation (`logsumexp` over
   the query heads of a KV group before adding the value term), not of the CUDA
   kernel. See [KERNEL_DIFF.md](KERNEL_DIFF.md).
-- **Two unexposed hooks exist in the simulation.** `quest_attention_bench.py` also implements
+- **Two unexposed hooks exist in the simulation.** `quest_attention.py` also implements
   `forward_quest_avg_of_V_l2norm_group_consistent_sum`, reachable only if an
   `args.va_mode == "avg_v_l2norm"` attribute is set; no CLI flag sets it. It
   scores with the mean of per-token V norms instead of the norm of the mean V.
-  And `filter_util_bench.dump_va_figures` dumps per-page qK^T vs ‖V‖ data for the
+  And `filter_util.dump_va_figures` dumps per-page qK^T vs ‖V‖ data for the
   motivation figure when `VA_FIGURE_DUMP_DIR` is set (with
   `VA_FIGURE_TARGET_LAYER` / `VA_FIGURE_TARGET_HEAD` /
   `VA_FIGURE_EXIT_AFTER_LAYERS`); it exits the process once it has dumped.

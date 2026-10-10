@@ -31,7 +31,7 @@ IFS=':' read -ra _pp <<< "${PYTHONPATH}"
 for _d in "${_pp[@]}"; do
     [ -z "$_d" ] && continue
     [ "$_d" = "$AOAKV_ROOT" ] && continue
-    if [ -f "$_d/evaluation/quest_attention_bench.py" ]; then _shadow="$_shadow $_d"; fi
+    if [ -f "$_d/evaluation/quest_attention.py" ]; then _shadow="$_shadow $_d"; fi
 done
 if [ -n "$_shadow" ]; then
     echo "WARNING: PYTHONPATH also contains another copy of this code:$_shadow"
