@@ -1,5 +1,6 @@
 # build outputs
 third_party/
+kernels/*/kernels/3rdparty/
 kernels/*/quest/ops/build/
 kernels/*/kernels/build/
 kernels/*/quest/_kernels*.so

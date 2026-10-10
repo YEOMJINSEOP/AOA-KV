@@ -227,6 +227,7 @@ if [ "$DO_KERNELS" = 1 ]; then
         exit 1
     fi
     echo -e "\naoa_kv md5     = $a\nquest_orig md5 = $b"
+    echo "Next: python latency/selftest_kernel.py --kernel aoa_kv   (and --kernel quest_orig)"
 fi
 
 self_check

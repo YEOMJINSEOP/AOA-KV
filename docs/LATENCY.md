@@ -17,9 +17,18 @@ See [KERNEL_DIFF.md](KERNEL_DIFF.md) for exactly what the one commit changes.
 conda activate aoakv
 bash setup.sh --build-kernels          # once per machine (needs nvcc)
 source env.sh
+
+# 30-second check that both trees actually run, before downloading any weights
+python latency/selftest_kernel.py --kernel aoa_kv
+python latency/selftest_kernel.py --kernel quest_orig
+
 bash scripts/run_latency.sh --model longchat-7b-v1.5-32k \
      --contexts 8192,16384 --budgets 1024 --gpu 0
 ```
+
+`selftest_kernel.py` builds a tiny randomly-initialised llama-7B-shaped model in
+memory and pushes a prefill plus a few decode steps through it. It proves the
+extension loads and the kernels execute; it says nothing about speed.
 
 Each row is appended to `$RESULTS_DIR/latency/latency.csv` and the comparison
 table is printed at the end (also available later via
@@ -34,9 +43,20 @@ CSV columns: `method, kernel_md5, gpu, model, context_len, token_budget,
 page_size, decode_len, iteration, prefill_ms, prefill_std_ms,
 decode_ms_per_token, decode_std_ms, timestamp`.
 
-Only llama-architecture models work here — `quest/models/` wraps
-`LlamaForCausalLM` only. `longchat-7b-v1.5-32k` is the model the earlier
-measurements used.
+**MHA llama models only.** `quest/models/` wraps `LlamaForCausalLM`, and
+`QuestAttention` appends K/V with `num_key_value_heads` into a cache the
+controller sized for `num_attention_heads`. With a GQA model (llama-3.x,
+qwen2.5, mistral) those shapes disagree, so the kernel path is restricted to
+MHA checkpoints — `longchat-7b-v1.5-32k` (what the earlier measurements used),
+`llama2-7b`, `vicuna-7b-v1.5-16k`. The accuracy side has no such restriction:
+it runs every model in `config_models.sh`.
+
+On top of that, `quest/ops/csrc/topk.cu:28` asserts `num_heads == 32`
+(upstream's comment: *"Not necessary, but for Llama-7b"*), so the kernel path is
+effectively llama-7B-shaped: 32 query heads, head_dim 128, MHA. A model with a
+different head count fails with
+`CHECK_EQ(32, num_heads) failed` the first time a decode step reaches top-k
+selection — that is the assert, not a bug in your setup.
 
 ## Methodology
 
@@ -73,7 +93,10 @@ md5 before trusting the output.
 
 L40S (single GPU, fp16), `longchat-7b-v1.5-32k`, budget 1024, page 16,
 decode_len 256, 10 iterations — measured 2026-05-25 on the original trees
-(`AOA_KV` md5 `aeeec57b…`, `QUEST` md5 `4e81b725…`):
+(`AOA_KV` md5 `aeeec57b…`, `QUEST` md5 `4e81b725…`). Your own build will print
+different md5s — they depend on the compiler and the target arch. What has to
+hold is that the *two trees* produce different binaries, which `setup.sh`
+checks explicitly:
 
 | context | QUEST prefill (ms) | AOA-KV prefill (ms) | QUEST decode (ms/tok) | AOA-KV decode (ms/tok) |
 |---:|---:|---:|---:|---:|

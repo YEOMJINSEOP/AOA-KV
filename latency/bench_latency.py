@@ -29,10 +29,14 @@ KERNELS = {
 # Label written to the CSV, so a row says which method it belongs to.
 METHOD_LABEL = {"aoa_kv": "AOA_KV", "quest_orig": "QUEST"}
 
+# MHA llama models only. quest/models/QuestAttention.py appends K/V with
+# num_key_value_heads into a cache the controller allocated for num_attention
+# heads, so a GQA model (llama-3.x, qwen2.5, mistral) does not work on this
+# path — which is why the published latency numbers use longchat.
 MODEL_PATHS = {
     "longchat-7b-v1.5-32k": "lmsys/longchat-7b-v1.5-32k",
     "llama2-7b": "meta-llama/Llama-2-7b-hf",
-    "llama-3.1-8b-instruct": "meta-llama/Llama-3.1-8B-Instruct",
+    "vicuna-7b-v1.5-16k": "lmsys/vicuna-7b-v1.5-16k",
 }
 
 CSV_FIELDS = [
@@ -67,7 +71,16 @@ def load_kernel_tree(kernel: str):
         sys.exit(f"{tree} is not a kernel tree (quest/__init__.py missing)")
     sys.path.insert(0, str(tree))
 
-    import quest  # noqa: E402  (must come after the sys.path edit)
+    # `import quest` pulls in quest.utils, which imports the compiled extension
+    # at module level — so an unbuilt tree fails right here, not at the explicit
+    # import below.
+    try:
+        import quest  # noqa: E402  (must come after the sys.path edit)
+    except ImportError as exc:
+        if "_kernels" in str(exc):
+            sys.exit(f"{tree} has no compiled extension yet ({exc}).\n"
+                     f"Build both trees with:  bash setup.sh --build-kernels")
+        raise
 
     loaded = Path(quest.__file__).resolve()
     if tree.resolve() not in loaded.parents:

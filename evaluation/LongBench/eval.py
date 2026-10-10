@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # wandb 초기화 (bench_mode가 True일 때만)
     if args.bench_mode == "True":
         wandb.init(
-            project="checking-longbench-eval",
+            project=os.environ.get("WANDB_PROJECT", "aoakv-longbench-eval"),
             name=str(token_budget),
             group=f"{args.model}_{args.method}",
             tags=[args.model, args.method, str(token_budget)],

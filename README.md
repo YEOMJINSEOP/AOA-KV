@@ -50,9 +50,17 @@ bash scripts/run_ruler.sh --model llama-3.2-3b-instruct --method aoakv \
 ### Latency
 
 ```bash
+# verify the kernels run at all (no weights needed, ~30 s per tree)
+python latency/selftest_kernel.py --kernel aoa_kv
+python latency/selftest_kernel.py --kernel quest_orig
+
 bash scripts/run_latency.sh --model longchat-7b-v1.5-32k \
      --contexts 8192,16384 --budgets 1024 --gpu 0
 ```
+
+The kernel path takes **MHA, 32-head llama checkpoints only** (longchat-7b,
+llama2-7b, vicuna-7b) — see [docs/LATENCY.md](docs/LATENCY.md). The accuracy
+side has no such restriction.
 
 Prints an AOA-KV vs QUEST table and appends to
 `$RESULTS_DIR/latency/latency.csv`, with the md5 of the kernel that produced
@@ -76,7 +84,8 @@ RULER/scripts/             data generation, prediction, scoring (NVIDIA RULER, t
 compat/manifest.py         jsonl helpers that replace the NeMo dependency
 kernels/aoa_kv/            Quest + value-aware scoring commit
 kernels/quest_orig/        Quest, unmodified
-latency/                   bench_latency.py (measure one tree), compare.py (table)
+latency/                   bench_latency.py (measure one tree), compare.py (table),
+                           selftest_kernel.py (does a built tree run at all?)
 docs/                      ACCURACY.md, LATENCY.md, KERNEL_DIFF.md
 results/                   outputs (gitignored)
 third_party/               fetched by setup.sh (gitignored)

@@ -93,6 +93,17 @@ translates the RULER spelling, so pass the same `--model` value to both runners.
   `output_tracker["enabled"] = True` hardwired in `call_api.py`, which made every
   RULER run accumulate per-step attention outputs in memory and write `.pt`
   files. Here it is `AOE_DUMP=1` opt-in, written under `AOE_DUMP_DIR`.
+- **A LongBench task writes its jsonl only after all 200 samples finish**
+  (`pred.py` collects predictions in memory first). A crash or a killed job at
+  sample 199 leaves nothing on disk and there is no resume — budget the wall
+  clock per task accordingly on a preemptible box. RULER, by contrast, writes
+  per task and skips tasks whose prediction file already exists.
+- **LongBench memory scales with the full context.** The simulation
+  materialises page-selection scores over the whole sequence, and
+  `evaluation/LongBench/config/model2maxlen.json` lets the long-context models
+  run at 127.5k. On a 46 GB card the long tasks (`passage_count`,
+  `narrativeqa`, …) will OOM unless the GPU is otherwise empty; lower
+  `model2maxlen` for that model, or run on a bigger card.
 - **GQA group-consistent selection** is part of the simulation (`logsumexp` over
   the query heads of a KV group before adding the value term), not of the CUDA
   kernel. See [KERNEL_DIFF.md](KERNEL_DIFF.md).
