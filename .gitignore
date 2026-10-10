@@ -1,0 +1,13 @@
+# build outputs
+third_party/
+kernels/*/quest/ops/build/
+kernels/*/kernels/build/
+kernels/*/quest/_kernels*.so
+*.egg-info/
+__pycache__/
+*.pyc
+
+# run outputs and caches
+results/
+.cache/
+wandb/

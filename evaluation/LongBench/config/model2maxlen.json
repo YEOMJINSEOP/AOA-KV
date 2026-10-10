@@ -1,0 +1,18 @@
+{
+    "llama2-7b-chat-4k": 3500,
+    "longchat-v1.5-7b-32k": 31500,
+    "xgen-7b-8k": 7500,
+    "internlm-7b-8k": 7500,
+    "chatglm2-6b": 31500,
+    "chatglm2-6b-32k": 31500,
+    "chatglm3-6b-32k": 31500,
+    "vicuna-v1.5-7b-16k": 15500, 
+    "mistral-7b-instruct-v0.3": 31500, 
+    "llama-3.1-8b-instruct": 1047500,
+    "mistral-7b-instruct-v0.2": 31500,
+    "llama-3.2-3b-instruct": 127500,
+    "llama-3.2-1b-instruct": 127500,
+    "qwen-2.5-7b-instruct": 127500,
+    "qwen-2.5-3b-instruct": 127500
+
+}

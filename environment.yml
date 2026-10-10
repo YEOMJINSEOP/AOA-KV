@@ -1,0 +1,15 @@
+# conda env for both accuracy (RULER / LongBench) and latency (kernel builds).
+#   conda env create -f environment.yml && conda activate aoakv
+#   bash setup.sh            # installs the pip layer + flash-attn in the right order
+#
+# cmake is pinned below 4.0 on purpose: the kernel build goes through
+# rapids-cmake/CPM, which does not configure under CMake 4.x.
+name: aoakv
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - cmake=3.31.4
+  - ninja
+  - git
