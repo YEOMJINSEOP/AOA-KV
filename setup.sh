@@ -86,6 +86,30 @@ except Exception as e:
 sys.exit(1 if missing else 0)
 PY
 
+    # Every live module must resolve inside this repo. Another checkout on
+    # PYTHONPATH, or an editable install of a sibling tree (pip install -e of a
+    # kernel repo maps `evaluation`/`quest` too), otherwise supplies them
+    # silently — and then you are measuring someone else's code.
+    python - <<'IMPORTCHECK' || fail=1
+import importlib, sys
+from pathlib import Path
+root = Path.cwd().resolve()
+sys.path.insert(0, str(root))
+bad = []
+for m in ["evaluation.quest_attention_bench", "evaluation.llama", "evaluation.mistral",
+          "evaluation.qwen", "filtering.filter_util_bench", "compat.manifest"]:
+    try:
+        f = Path(importlib.import_module(m).__file__).resolve()
+    except Exception as e:
+        bad.append(f"{m}: {type(e).__name__}")
+        continue
+    if root not in f.parents:
+        bad.append(f"{m} -> {f}")
+print("imports    :", "OK (all resolve inside the repo)" if not bad
+      else "FAIL - resolved outside this repo:\n  " + "\n  ".join(bad))
+sys.exit(1 if bad else 0)
+IMPORTCHECK
+
     # RULER needs its synthetic sources; they ship with the repo.
     for f in RULER/scripts/data/synthetic/json/{PaulGrahamEssays,squad,hotpotqa}.json; do
         [ -s "$f" ] && echo "data       : OK  $f" || { echo "data       : MISSING $f"; fail=1; }

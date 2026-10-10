@@ -73,11 +73,10 @@ env.sh                     source this first (paths, PYTHONPATH, HF_HOME, wandb 
 setup.sh                   deps, kernel builds, self-check
 scripts/                   run_ruler.sh, run_longbench.sh, run_latency.sh
 evaluation/                attention simulation + LongBench harness
-  quest_attention_bench.py   the forward used by every accuracy run (BENCH_MODE=True)
-  quest_attention.py         same formulas, non-bench variant
+  quest_attention_bench.py   the forward every accuracy run installs
   llama.py mistral.py qwen.py  per-architecture KV-cache patches
   LongBench/                 pred.py, eval.py, metrics.py, config/
-filtering/                 page scoring and top-k (filter_util_bench.py is the live one)
+filtering/                 filter_util_bench.py — page scoring and top-k
 RULER/scripts/             data generation, prediction, scoring (NVIDIA RULER, trimmed)
   data/synthetic/json/       squad / hotpotqa / PaulGrahamEssays sources (vendored)
   config_models.sh           model registry + prompt template per model
@@ -94,7 +93,7 @@ third_party/               fetched by setup.sh (gitignored)
 ## Docs
 
 - **[docs/ACCURACY.md](docs/ACCURACY.md)** — how to run RULER / LongBench, output
-  layout, and the traps (BENCH_MODE, model-name spellings, AOE dumping, wandb).
+  layout, and the traps (model-name spellings, memory, wandb).
 - **[docs/LATENCY.md](docs/LATENCY.md)** — timing methodology, the
   kernel-loading trap, CSV schema, reference L40S numbers.
 - **[docs/KERNEL_DIFF.md](docs/KERNEL_DIFF.md)** — the exact AOA-KV vs Quest
@@ -102,9 +101,10 @@ third_party/               fetched by setup.sh (gitignored)
 
 ## Scope
 
-Deliberately absent: ShadowKV and other baselines, AOE/error profiling, figure
-generation, cluster (sbatch/docker) launchers, the `vllm`/`trtllm`/`sglang`
-serving paths, and every non-`hf` RULER server type. Adding a baseline means
+Deliberately absent: ShadowKV and other baselines, AOE/error profiling (and the
+second, non-`_bench` copy of the simulation it hung off), figure generation,
+cluster (sbatch/docker) launchers, the `vllm`/`trtllm`/`sglang` serving paths,
+and every non-`hf` RULER server type. Adding a baseline means
 adding a `--method` arm to the two accuracy runners.
 
 ## Provenance

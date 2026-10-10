@@ -25,13 +25,6 @@ from evaluation.qwen import enable_tuple_kv_cache_for_qwen2
 
 logger = logging.getLogger(__name__)
 
-# *********** CLAUDE ADDED ************
-# Attention output tracking
-from evaluation.quest_attention import output_tracker
-# *********** CLAUDE ADDED ************
-###
-
-
 
 class HuggingFaceModel:
     def __init__(self, name_or_path: str, args, **generation_kwargs) -> None:
@@ -74,17 +67,8 @@ class HuggingFaceModel:
         )
         
         # ****************************************************************************************************************
-        import os
-        if os.getenv('BENCH_MODE') == 'True':
-            from evaluation.quest_attention_bench import (
-                enable_quest_attention_eval,
-            )
-        else:
-            from evaluation.quest_attention import (
-                enable_quest_attention_eval,
-            )
-        # ****************************************************************************************************************
-        
+        from evaluation.quest_attention_bench import enable_quest_attention_eval
+
         enable_quest_attention_eval(self.model, self.args)
         self.pipeline=None
         # self.pipeline = pipeline(
@@ -130,13 +114,6 @@ class HuggingFaceModel:
         **kwargs
     ) -> List[dict]:
         with torch.inference_mode():
-            # *********** CLAUDE ADDED ************
-            # Attention output tracking: 현재 sample 설정 및 step 초기화
-            if task_sample_idx is not None:
-                output_tracker["current_sample"] = task_sample_idx
-                output_tracker["current_step"] = 0
-            # *********** CLAUDE ADDED ************
-
             inputs = self.tokenizer(prompts, return_tensors="pt", padding=True).to(self.model.device)
             # ************ ************ ************ ************ ************
             output = self.model(
@@ -155,11 +132,6 @@ class HuggingFaceModel:
             pred_token_idx = output.logits[:, -1, :].argmax(dim=-1).unsqueeze(1)
             generated_content = [pred_token_idx.item()]
 
-            # *********** CLAUDE ADDED ************
-            # 첫 번째 decoding step 완료 후 step 증가
-            output_tracker["current_step"] += 1
-            # *********** CLAUDE ADDED ************
-
             max_new_tokens = self.generation_kwargs['max_new_tokens']
             for _ in range(max_new_tokens-1):
                 outputs = self.model( # old_mistral_for_causal_lm_forward
@@ -175,11 +147,6 @@ class HuggingFaceModel:
                 past_key_values = outputs.past_key_values
                 pred_token_idx = outputs.logits[:, -1, :].argmax(dim=-1).unsqueeze(1)
                 generated_content += [pred_token_idx.item()]
-
-                # *********** CLAUDE ADDED ************
-                # 각 decoding step 완료 후 step 증가
-                output_tracker["current_step"] += 1
-                # *********** CLAUDE ADDED ************
 
                 if pred_token_idx.item() == self.tokenizer.eos_token_id:
                     break

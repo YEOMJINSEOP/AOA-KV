@@ -87,6 +87,10 @@ else
 fi
 [ -n "$NUM_SAMPLES_ARG" ] && NUM_SAMPLES="$NUM_SAMPLES_ARG"
 
+# The eval scripts spell their wandb switch "--bench_mode"; it gates nothing
+# else (scores and CSVs are written either way), so derive it from WANDB_MODE.
+if [ "${WANDB_MODE:-disabled}" = "disabled" ]; then WANDB_LOG="False"; else WANDB_LOG="True"; fi
+
 export CUDA_VISIBLE_DEVICES="$GPU"
 BENCHMARK=synthetic
 ROOT_OUT="${RESULTS_DIR}/ruler/${MODEL}/${BENCHMARK}"
@@ -99,7 +103,7 @@ echo "BUDGETS      = $BUDGETS"
 echo "PAGE_SIZE    = $PAGE_SIZE"
 echo "TASKS        = ${TASKS[*]}"
 echo "NUM_SAMPLES  = $NUM_SAMPLES"
-echo "BENCH_MODE   = $BENCH_MODE"
+echo "WANDB        = $WANDB_MODE"
 echo "GPU          = $CUDA_VISIBLE_DEVICES"
 echo "OUT          = $ROOT_OUT"
 echo "=============================================="
@@ -163,7 +167,7 @@ for SEQ_LEN in "${SEQ_LEN_LIST[@]}"; do
             --method "${METHOD}" \
             --token_budget "${BUDGET}" \
             --max_seq_length "${SEQ_LEN}" \
-            --bench_mode "${BENCH_MODE}" \
+            --bench_mode "${WANDB_LOG}" \
             --page_size ${PAGE_SIZE}
     done
 done

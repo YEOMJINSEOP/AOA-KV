@@ -67,6 +67,10 @@ case "$MODEL" in
     longchat-7b-v1.5-32k)  MODEL="longchat-v1.5-7b-32k" ;;
 esac
 
+# The eval scripts spell their wandb switch "--bench_mode"; it gates nothing
+# else (scores and CSVs are written either way), so derive it from WANDB_MODE.
+if [ "${WANDB_MODE:-disabled}" = "disabled" ]; then WANDB_LOG="False"; else WANDB_LOG="True"; fi
+
 export CUDA_VISIBLE_DEVICES="$GPU"
 BASE_OUT="${RESULTS_DIR}/longbench/${MODEL}"
 # pred.py passes this to from_pretrained(cache_dir=...) / load_dataset(cache_dir=...),
@@ -79,7 +83,7 @@ echo "MODEL      = $MODEL"
 echo "METHOD     = $METHOD   [quest=$QUEST fixed=$FIXED_FLAG value_aware=$VALUE_AWARE]"
 echo "BUDGETS    = $BUDGETS"
 echo "PAGE_SIZE  = $PAGE_SIZE"
-echo "BENCH_MODE = $BENCH_MODE"
+echo "WANDB      = $WANDB_MODE"
 echo "GPU        = $CUDA_VISIBLE_DEVICES"
 echo "OUT        = $BASE_OUT"
 echo "=============================================="
@@ -105,7 +109,7 @@ for BUDGET in "${BUDGET_LIST[@]}"; do
         --out_dir "${BASE_OUT}" \
         --model "${MODEL}" --tasks "${TASKS}" --method "${METHOD}" \
         --token_budget "${BUDGET}" \
-        --bench_mode "${BENCH_MODE}"
+        --bench_mode "${WANDB_LOG}"
 done
 
 echo "Done. Scores under ${BASE_OUT}/"

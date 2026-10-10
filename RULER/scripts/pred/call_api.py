@@ -46,14 +46,6 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
 from compat.manifest import read_manifest
 
-# *********** CLAUDE ADDED ************
-# Attention output tracking
-from evaluation.quest_attention import output_tracker
-from collections import defaultdict
-import numpy as np
-import torch
-# *********** CLAUDE ADDED ************
-
 SERVER_TYPES = ('hf',)
 
 class ServerAction(argparse.Action):
@@ -128,29 +120,8 @@ def get_llm(tokens_to_generate):
         raise RuntimeError(f'Unsupported server type {args.server_type}')
 
     return llm
-
-# *********** CLAUDE ADDED ************
-def get_method_name(args):
-    """args로부터 method_name 결정"""
-    if args.token_budget >= 999999:
-        return "Full"
-
-    method_name = "Quest"
-    if args.fixed:
-        method_name += "+fixed"
-    if args.value_aware:
-        method_name += "+VA"
-    method_name += f"-{args.token_budget}-{args.chunk_size}"
-    return method_name
-# *********** CLAUDE ADDED ************
-
 def main():
     start_time = time.time()
-
-    # Attention-output (AOE) dumping is opt-in: it costs memory per decode step
-    # and writes one .pt per sample. Accuracy runs leave it off.
-    output_tracker["enabled"] = os.environ.get("AOE_DUMP", "0") == "1"
-    output_tracker["data"].clear()
 
     curr_folder = os.path.dirname(os.path.abspath(__file__))
     
@@ -292,47 +263,6 @@ def main():
                 start_idx = end_idx + 1
 
     print(f"Used time: {round((time.time() - start_time) / 60, 1)} minutes")
-
-    # *********** CLAUDE ADDED ************
-    # Attention output 저장
-    method_name = get_method_name(args)
-    save_attention_outputs(args, method_name)
-    # *********** CLAUDE ADDED ************
-
-# *********** CLAUDE ADDED ************
-def save_attention_outputs(args, method_name):
-    """각 sample의 attention output 벡터를 .pt 파일로 저장"""
-    if not output_tracker["enabled"] or not output_tracker["data"]:
-        print("⚠️ No attention output data to save")
-        return
-
-    # model_name 추출 (e.g., mistral-7b-instruct-v0.2)
-    model_name = os.path.basename(args.model_name_or_path)
-    seq_len = args.seq_len if args.seq_len > 0 else "unknown"
-
-    dump_root = os.environ.get(
-        "AOE_DUMP_DIR",
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "results", "aoe"),
-    )
-    save_dir = os.path.join(dump_root, model_name, str(seq_len), method_name, args.task)
-    os.makedirs(save_dir, exist_ok=True)
-
-    for sample_idx, layer_data in output_tracker["data"].items():
-        # layer_data: {layer_id: [tensor, tensor, ...]} -> {layer_id: stacked_tensor}
-        save_data = {}
-        for layer_id, tensors in layer_data.items():
-            if len(tensors) > 0:
-                save_data[layer_id] = torch.stack(tensors)  # (num_steps, num_heads, head_dim)
-
-        save_path = f"{save_dir}/sample_{sample_idx}.pt"
-        torch.save(save_data, save_path)
-
-    print(f"✅ Attention outputs saved to: {save_dir}")
-    print(f"   - {len(output_tracker['data'])} samples saved")
-
-    # 다음 task를 위해 data 초기화
-    output_tracker["data"].clear()
-# *********** CLAUDE ADDED ************
 
 if __name__ == '__main__':
     main()

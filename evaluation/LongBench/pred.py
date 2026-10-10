@@ -15,13 +15,7 @@ import random
 import argparse
 # ****** Claude Added ******
 import gc
-# ****** Claude Added ******
-# ****************************************************************************************************************
-if os.getenv('BENCH_MODE') == 'True':
-    from evaluation.quest_attention_bench import enable_quest_attention_eval
-else:
-    from evaluation.quest_attention import enable_quest_attention_eval
-# ****************************************************************************************************************
+from evaluation.quest_attention_bench import enable_quest_attention_eval
 from evaluation.llama import enable_tuple_kv_cache_for_llama 
 from evaluation.mistral import enable_tuple_kv_cache_for_mistral
 from evaluation.qwen import enable_tuple_kv_cache_for_qwen2

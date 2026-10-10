@@ -16,6 +16,8 @@ means nothing.
 Attention is **simulated in PyTorch** here, not run through the CUDA kernels:
 `evaluation/quest_attention_bench.py` replaces each attention module's
 `forward`, and `filtering/filter_util_bench.py` does the page scoring and top-k.
+There is one such path — the `BENCH_MODE` switch and the second (non-`_bench`)
+copy of both modules are gone, so a run cannot silently use the other variant.
 Latency therefore cannot be read off these runs — see [LATENCY.md](LATENCY.md).
 
 The scoring formula and its relationship to the kernel implementation is in
@@ -81,18 +83,19 @@ translates the RULER spelling, so pass the same `--model` value to both runners.
 - **`source env.sh` first.** `evaluation.*`, `filtering.*` and `compat.*` are
   imported by both benchmarks and need the repo root on `PYTHONPATH`. A stale
   `PYTHONPATH` pointing at another checkout of this code will be used instead —
-  `env.sh` warns when it sees one.
-- **`BENCH_MODE=True` (the default) selects the `*_bench` modules.** The
-  published numbers were produced with those. `BENCH_MODE=False` switches to
-  `evaluation/quest_attention.py` + `filtering/filter_util.py`, which implement
-  the same formula but are not identical files — do not mix the two in one table.
+  `env.sh` warns when it sees one, and `setup.sh --check` asserts that every live
+  module resolves inside the repo. That second check also catches an editable
+  install of a sibling tree: `pip install -e` on a Quest checkout registers a
+  finder that maps `evaluation` and `quest`, which silently supplies any module
+  this repo does not have.
 - **wandb is off by default** (`WANDB_MODE=disabled`). To log:
   `export WANDB_MODE=online WANDB_API_KEY=... WANDB_PROJECT=...`. No key is
-  stored in this repo; if you find one, treat it as a leak.
-- **AOE dumping is off by default.** The research tree had
-  `output_tracker["enabled"] = True` hardwired in `call_api.py`, which made every
-  RULER run accumulate per-step attention outputs in memory and write `.pt`
-  files. Here it is `AOE_DUMP=1` opt-in, written under `AOE_DUMP_DIR`.
+  stored in this repo; if you find one, treat it as a leak. The eval scripts
+  still spell this switch `--bench_mode`; the runners derive it from
+  `WANDB_MODE`, and scores/CSVs are written either way.
+- **No AOE (attention-output) profiling.** The research tree collected per-step
+  attention outputs and wrote `.pt` files from every RULER run; that path and its
+  `output_tracker` are removed here. It lives on in the VAKVPS tree.
 - **A LongBench task writes its jsonl only after all 200 samples finish**
   (`pred.py` collects predictions in memory first). A crash or a killed job at
   sample 199 leaves nothing on disk and there is no resume — budget the wall
@@ -107,7 +110,11 @@ translates the RULER spelling, so pass the same `--model` value to both runners.
 - **GQA group-consistent selection** is part of the simulation (`logsumexp` over
   the query heads of a KV group before adding the value term), not of the CUDA
   kernel. See [KERNEL_DIFF.md](KERNEL_DIFF.md).
-- **One unexposed variant exists.** `quest_attention_bench.py` also implements
+- **Two unexposed hooks exist in the simulation.** `quest_attention_bench.py` also implements
   `forward_quest_avg_of_V_l2norm_group_consistent_sum`, reachable only if an
   `args.va_mode == "avg_v_l2norm"` attribute is set; no CLI flag sets it. It
   scores with the mean of per-token V norms instead of the norm of the mean V.
+  And `filter_util_bench.dump_va_figures` dumps per-page qK^T vs ‖V‖ data for the
+  motivation figure when `VA_FIGURE_DUMP_DIR` is set (with
+  `VA_FIGURE_TARGET_LAYER` / `VA_FIGURE_TARGET_HEAD` /
+  `VA_FIGURE_EXIT_AFTER_LAYERS`); it exits the process once it has dumped.
